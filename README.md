@@ -11,8 +11,10 @@ pip install -r requirements.txt
 
 - Softmax:
 ```
-python ./trainEmbedNet.py --model ResNet18 --trainfunc softmax --save_path exps/exp1 --nClasses 2000 --batch_size 200
+python ./trainEmbedNet.py --model ResNet18 --trainfunc softmax --save_path exps/exp1 --nClasses 2000 --batch_size 200 --gpu 8
 ```
+
+GPU ID must be specified using `--gpu` flag.
 
 Use `--mixedprec` flag to enable mixed precision training. This is recommended for Tesla V100, GeForce RTX 20 series or later models.
 
@@ -45,16 +47,6 @@ The folders in the training set should contain images for each identity (i.e. `i
 
 The input transformations can be changed in the code.
 
-### Citation
+### Inference
 
-Please cite the following if you make use of the code.
-
-```
-@inproceedings{chung2020in,
-  title={In defence of metric learning for speaker recognition},
-  author={Chung, Joon Son and Huh, Jaesung and Mun, Seongkyu and Lee, Minjae and Heo, Hee Soo and Choe, Soyeon and Ham, Chiheon and Jung, Sunghwan and Lee, Bong-Jin and Han, Icksang},
-  booktitle={Interspeech},
-  year={2020}
-}
-```
-
+In order to save pairwise similarity scores to file, use `--output` flag.
