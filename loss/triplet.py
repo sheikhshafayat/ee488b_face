@@ -57,7 +57,7 @@ class LossFunction(nn.Module):
         allidx = range(0,batch_size)
 
         for idx in allidx:
-
+            
             excidx = list(allidx)
             excidx.pop(idx)
 
@@ -65,7 +65,42 @@ class LossFunction(nn.Module):
                 # Random negative mining
                 negidx.append(random.choice(excidx))
 
-            else:
-                ValueError('Undefined type of mining.')
+            elif type == 'semihard':
+                # Compute pairwise distance between the anchor and all positives - use F.pairwise_distance
+                distance = F.pairwise_distance(embed_a[idx, :], embed_p)
 
+                # Semi-hard negative mining - criteria (distance greater than the positive pair, and less than positive + margin )
+                hardidx = torch.IntTensor(allidx)[(distance > distance[idx]) & (distance < distance[idx] + self.margin)]
+                #not sure about distance[idx] part
+
+                if len(hardidx) == 0:
+                    # append random index if no index matches the criteria
+                    # (your code)
+                    negidx.append(random.choice(excidx))
+                else:
+                    # append a random index that meets the criteria
+                    # (your code)
+                    negidx.append(int(random.choice(hardidx)))
+
+            elif type == 'hard':
+                # Compute pairwise distance between the anchor and all positives - use F.pairwise_distance
+                #distance = # (your code)
+
+                # Hard negative mining - criteria (distance less than the positive pair)
+                # (your code)
+                distance = F.pairwise_distance(embed_a[idx,:], embed_p)
+                hardidx = torch.IntTensor(allidx)[(distance < distance[idx])]
+                
+                if len(hardidx) == 0:
+                    # append random index if no index matches the criteria
+                    # (your code)
+                    negidx.append(random.choice(excidx))
+                else:
+                    # append a random index that meets the criteria
+                    # (your code)
+                    negidx.append(int(random.choice(hardidx)))
+                 
+
+            else:
+                ValueError('Undefined type of mining.')            
         return negidx
