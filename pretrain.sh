@@ -1,0 +1,1 @@
+python trainEmbedNet.py --model iresnet --trainfunc angleproto --save_path exps/iresnetvggface --nPerClass 2 --gpu 7 --max_epoch 100 --scheduler steplr --batch_size 264 --lr 0.001 --lr_decay 0.5 --optimizer adamw --train_path data/data_only_vgg/train

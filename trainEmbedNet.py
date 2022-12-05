@@ -13,6 +13,9 @@ from EmbedNet import *
 from DatasetLoader import get_data_loader
 import torchvision.transforms as transforms
 
+import wandb
+
+
 # ## ===== ===== ===== ===== ===== ===== ===== =====
 # ## Parse arguments
 # ## ===== ===== ===== ===== ===== ===== ===== =====
@@ -20,7 +23,7 @@ import torchvision.transforms as transforms
 parser = argparse.ArgumentParser(description = "Face Recognition Training");
 
 ## Data loader
-parser.add_argument('--batch_size',         type=int, default=100,	help='Batch size, number of classes per batch');
+parser.add_argument('--batch_size',         type=int, default=264,	help='Batch size, number of classes per batch');
 parser.add_argument('--max_img_per_cls',    type=int, default=500,	help='Maximum number of images per class per epoch');
 parser.add_argument('--nDataLoaderThread',  type=int, default=5, 	help='Number of loader threads');
 
@@ -47,11 +50,11 @@ parser.add_argument('--initial_model',  type=str,   default="",     help='Initia
 parser.add_argument('--save_path',      type=str,   default="exps/exp1", help='Path for model and logs');
 
 ## Training and evaluation data
-parser.add_argument('--train_path',     type=str,   default="data/train",   help='Absolute path to the train set');
+parser.add_argument('--train_path',     type=str,   default="data/data_only_korean/train",   help='Absolute path to the train set');
 parser.add_argument('--train_ext',      type=str,   default="jpg",  help='Training files extension');
 parser.add_argument('--test_path',      type=str,   default="data/val",     help='Absolute path to the test set');
 parser.add_argument('--test_list',      type=str,   default="data/val_pairs.csv",   help='Evaluation list');
-
+# data/data_only_vgg/train
 ## Model definition
 parser.add_argument('--model',          type=str,   default="ResNet18", help='Name of model definition');
 parser.add_argument('--nOut',           type=int,   default=512,    help='Embedding size in the last FC layer');
@@ -66,7 +69,7 @@ parser.add_argument('--gpu',            type=int,   default=9,      help='GPU in
 
 args = parser.parse_args();
 
-
+wandb.init(project="ee488i", name = "finetune17(cont)", config=args)
 # ## ===== ===== ===== ===== ===== ===== ===== =====
 # ## Trainer script
 # ## ===== ===== ===== ===== ===== ===== ===== =====
@@ -75,7 +78,7 @@ def main_worker(args):
 
     ## Load models
     s = EmbedNet(**vars(args)).cuda();
-
+    #import pdb; pdb.set_trace()
     it          = 1
 
     ## Input transformations for training
@@ -83,7 +86,11 @@ def main_worker(args):
         [transforms.ToTensor(),
          transforms.Resize(256),
          transforms.RandomCrop([224,224]),
-         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
+         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+         transforms.RandomHorizontalFlip(0.5),
+         #transforms.GaussianBlur(3, sigma=(0.1, 2.0)),
+         #transforms.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4, hue=0.1),
+         transforms.RandomRotation(10)])
 
     ## Input transformations for evaluation
     test_transform = transforms.Compose(
@@ -99,7 +106,7 @@ def main_worker(args):
     ## Load model weights
     modelfiles = glob.glob('{}/model0*.model'.format(args.save_path))
     modelfiles.sort()
-
+    #import pdb; pdb.set_trace()
     ## If the target directory already exists, start from the existing file
     if len(modelfiles) >= 1:
         trainer.loadParameters(modelfiles[-1]);
@@ -148,12 +155,13 @@ def main_worker(args):
         print(time.strftime("%Y-%m-%d %H:%M:%S"), it, "Training epoch {:d} with LR {:.5f} ".format(it,max(clr)));
 
         loss = trainer.train_network(trainLoader);
+        wandb.log({"train_loss": loss})
 
         if it % args.test_interval == 0:
             
             sc, lab, trials = trainer.evaluateFromList(transform=test_transform, **vars(args))
             result = tuneThresholdfromScore(sc, lab, [1, 0.1]);
-
+            wandb.log({"val_eer": result[1]})
             print("IT {:d}, Val EER {:.5f}".format(it, result[1]));
             scorefile.write("IT {:d}, Val EER {:.5f}\n".format(it, result[1]));
 
@@ -178,7 +186,7 @@ def main():
             
     if not(os.path.exists(args.save_path)):
         os.makedirs(args.save_path)
-
+    #import pdb; pdb.set_trace()
     main_worker(args)
 
 

@@ -1,6 +1,3 @@
-#!/usr/bin/python
-#-*- coding: utf-8 -*-
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -77,7 +74,7 @@ class ModelTrainer(object):
         with tqdm(loader, unit="batch") as tepoch:
         
             for data, label in tepoch:
-
+                
                 tepoch.total = tepoch.__len__()
 
                 data    = data.transpose(1,0)
@@ -107,7 +104,7 @@ class ModelTrainer(object):
                 if self.lr_step == 'iteration': self.__scheduler__.step()
 
             if self.lr_step == 'epoch': self.__scheduler__.step()
-        
+
         return (loss/counter);
 
 
@@ -200,4 +197,3 @@ class ModelTrainer(object):
                 continue;
 
             self_state[name].copy_(param);
-
